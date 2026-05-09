@@ -1,0 +1,70 @@
+# ── Solana / Anchor ───────────────────────────────────────────────
+.anchor/
+target/
+**/*.so
+**/*.d.ts.map
+
+# ── Node ──────────────────────────────────────────────────────────
+node_modules/
+.yarn/cache
+.pnp.*
+
+# ── Next.js ───────────────────────────────────────────────────────
+app/.next/
+app/out/
+app/.vercel/
+
+# ── Environment ───────────────────────────────────────────────────
+.env
+.env.local
+.env*.local
+!.env.local.example
+!.env.example
+
+# ── Keys — NEVER commit keypairs ──────────────────────────────────
+*.json.bak
+wallet.json
+authority-keypair.json
+*-keypair.json
+
+# ── OS ────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Logs ──────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# ── IDE ───────────────────────────────────────────────────────────
+.vscode/settings.json
+.idea/
+*.swp
+
+# Local validator
+test-ledger/
+
+# Misc
+solana-install.sh
+build.log
+package-lock.json
+
+
+# Rust
+Cargo.lock
+
+# Next build cache
+.next/
+
+# Turbopack
+.turbo/
+
+# Solana
+dist/
+coverage/
+
+# Windows
+desktop.ini
+
+# Anchor deploy artifacts
+target/deploy/

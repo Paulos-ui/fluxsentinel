@@ -1,0 +1,17 @@
+{
+  "name": "fluxsentinel",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": ["app", "mock-engine"],
+  "scripts": {
+    "dev": "concurrently \"yarn workspace app dev\" \"yarn workspace mock-engine dev\"",
+    "dev:app": "yarn workspace app dev",
+    "dev:engine": "yarn workspace mock-engine dev",
+    "build": "yarn workspace app build",
+    "deploy:programs": "bash scripts/deploy.sh",
+    "setup": "bash scripts/setup.sh"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

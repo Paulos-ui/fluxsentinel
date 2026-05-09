@@ -1,0 +1,5 @@
+@'
+{
+  "framework": "nextjs"
+}
+'@ | Out-File -Encoding utf8 vercel.json

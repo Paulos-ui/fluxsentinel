@@ -1,12 +1,5 @@
 {
-  "version": 2,
-  "buildCommand": "cd app && yarn install && yarn build",
-  "outputDirectory": "app/.next",
-  "installCommand": "cd app && yarn install",
   "framework": "nextjs",
-  "env": {
-    "NEXT_PUBLIC_NETWORK": "devnet"
-  },
   "headers": [
     {
       "source": "/(.*)",

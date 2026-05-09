@@ -45,26 +45,20 @@ console.log("[engine] Oracle Program ID:", oracleProgramId.toBase58());
 // ── Load authority keypair ────────────────────────────────────────────────────
 
 let authorityKeypair;
-
 try {
-  const keyPath =
-    process.env.ORACLE_AUTHORITY_KEY_PATH ||
-    `${process.env.USERPROFILE || process.env.HOME}/.config/solana/id.json`;
-
-  const raw = fs.readFileSync(keyPath, "utf-8");
-
-  authorityKeypair = Keypair.fromSecretKey(
-    Uint8Array.from(JSON.parse(raw))
-  );
-
-  console.log(
-    `[engine] Authority: ${authorityKeypair.publicKey.toBase58()}`
-  );
+  // Try env var first (for cloud deploy), fallback to file (for local dev)
+  if (process.env.ORACLE_AUTHORITY_KEY_JSON) {
+    const raw = process.env.ORACLE_AUTHORITY_KEY_JSON;
+    authorityKeypair = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(raw)));
+  } else {
+    const keyPath = process.env.ORACLE_AUTHORITY_KEY_PATH || `${process.env.HOME}/.config/solana/id.json`;
+    const raw = fs.readFileSync(keyPath, "utf-8");
+    authorityKeypair = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(raw)));
+  }
+  console.log(`[engine] Authority: ${authorityKeypair.publicKey.toBase58()}`);
 } catch (e) {
-  console.error("[engine] ❌ Could not load keypair:", e.message);
-  console.error(
-    "[engine] Set ORACLE_AUTHORITY_KEY_PATH or ensure id.json exists in Solana config folder"
-  );
+  console.error("[engine] Could not load keypair:", e.message);
+  console.error("[engine] Set ORACLE_AUTHORITY_KEY_JSON (cloud) or ORACLE_AUTHORITY_KEY_PATH (local)");
   process.exit(1);
 }
 

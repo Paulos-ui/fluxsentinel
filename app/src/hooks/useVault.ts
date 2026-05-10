@@ -69,9 +69,9 @@ export function useVault(collateralMint: PublicKey | null) {
       try {
         const tx  = await buildFn();
         const sig = await wallet.sendTransaction(tx, connection, {
-          skipPreflight: false,
-          maxRetries: 3,
-        });
+  skipPreflight: true,
+  maxRetries: 3,
+});
 
         // Wait for confirmation
         const { blockhash, lastValidBlockHeight } =

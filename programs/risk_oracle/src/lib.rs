@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("H8S1vBHZ9tUJna1PWfm6fv1oaTTsTSoAkWVP9hXA7STy");
+declare_id!("u6LFtFvriSjCibNRsFBJgPi61m4LkDPLXM3HYndFMJX");
 
 pub const MAX_SCORE_AGE_SECONDS: i64 = 300;
 pub const THRESHOLD_OPEN: u8 = 80;

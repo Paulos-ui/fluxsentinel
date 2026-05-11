@@ -6,15 +6,15 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-circuit_breaker = "8dCZCMLL4ZywhTtMKN9JXpYEgueW1fGMYvTdeDAuvywU"
-risk_oracle = "H8S1vBHZ9tUJna1PWfm6fv1oaTTsTSoAkWVP9hXA7STy"
-rwa_vault = "A9vyKe1cwK6RKCWSr3u84jNSmEfpCYKeimzp4GkxW1pM"
+risk_oracle     = "u6LFtFvriSjCibNRsFBJgPi61m4LkDPLXM3HYndFMJX"
+circuit_breaker = "9tQPx6NLzy81Lk3AQwA8EbnnCSPbrGezCmc58EkvDG8r"
+rwa_vault       = "27LUs2phpTGbAQ5vkb1K44Aa45HW2JoViFat5st8keFE"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
+cluster = "Devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

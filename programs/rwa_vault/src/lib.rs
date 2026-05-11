@@ -1,11 +1,10 @@
-use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, MintTo, Burn, Transfer};
 use anchor_spl::associated_token::AssociatedToken;
 
-declare_id!("A9vyKe1cwK6RKCWSr3u84jNSmEfpCYKeimzp4GkxW1pM");
+declare_id!("27LUs2phpTGbAQ5vkb1K44Aa45HW2JoViFat5st8keFE");
 
-pub const CIRCUIT_BREAKER_ID: Pubkey = pubkey!("DGshJJAS7tVWQFpYYMwCt8tiHRDqNcyiqV89TvrWvGB2");
-pub const RISK_ORACLE_ID: Pubkey     = pubkey!("Ge5cnpRct8bS7SAcJr3gN71wKCZHMcPxWa818myKt4vg");
+pub const CIRCUIT_BREAKER_ID: Pubkey = pubkey!("9tQPx6NLzy81Lk3AQwA8EbnnCSPbrGezCmc58EkvDG8r");
+pub const RISK_ORACLE_ID: Pubkey     = pubkey!("u6LFtFvriSjCibNRsFBJgPi61m4LkDPLXM3HYndFMJX");
 pub const FLUX_DECIMALS: u8          = 6;
 pub const MAX_SCORE_AGE: i64         = 300;
 pub const RATIO_OPEN_BPS: u64        = 15_000;
@@ -247,16 +246,39 @@ pub mod rwa_vault {
 }
 
 // ── Gate helpers ─────────────────────────────────────────────────────────────
+// We accept UncheckedAccount and manually validate ownership + parse fields.
+// This avoids Anchor's automatic owner check (which would compare against
+// rwa_vault's program ID instead of risk_oracle's).
 
-fn get_score(oracle: &Account<OracleView>) -> (u8, u64) {
+fn get_score(oracle: &UncheckedAccount) -> Result<(u8, u64)> {
+    // Manual ownership validation
+    require_keys_eq!(*oracle.owner, RISK_ORACLE_ID, VaultError::InvalidOracle);
+
+    // Parse OracleState fields manually:
+    //   discriminator     [0..8]    8 bytes
+    //   authority         [8..40]   32 bytes
+    //   score             [40]      1 byte
+    //   lr                [41]      1 byte
+    //   at                [42]      1 byte
+    //   od                [43]      1 byte
+    //   vs                [44]      1 byte
+    //   last_updated      [45..53]  8 bytes (i64 LE)
+    let data = oracle.try_borrow_data()?;
+    require!(data.len() >= 53, VaultError::InvalidOracle);
+
+    let score = data[40];
+    let last_updated = i64::from_le_bytes(
+        data[45..53].try_into().map_err(|_| VaultError::InvalidOracle)?
+    );
+
     let now = Clock::get().map(|c| c.unix_timestamp).unwrap_or(0);
-    let score = if now.saturating_sub(oracle.last_updated) > MAX_SCORE_AGE { 0 } else { oracle.score };
-    let ratio = if score >= 80 { RATIO_OPEN_BPS } else { RATIO_RESTRICTED_BPS };
-    (score, ratio)
+    let effective_score = if now.saturating_sub(last_updated) > MAX_SCORE_AGE { 0 } else { score };
+    let ratio = if effective_score >= 80 { RATIO_OPEN_BPS } else { RATIO_RESTRICTED_BPS };
+    Ok((effective_score, ratio))
 }
 
-fn gate_check(oracle: &Account<OracleView>, op: u8) -> Result<()> {
-    let (score, _) = get_score(oracle);
+fn gate_check(oracle: &UncheckedAccount, op: u8) -> Result<()> {
+    let (score, _) = get_score(oracle)?;
     let allowed = if score >= 80 { true }
         else if score >= 60 { op == 2 || op == 3 }
         else { op == 3 };
@@ -264,8 +286,8 @@ fn gate_check(oracle: &Account<OracleView>, op: u8) -> Result<()> {
     Ok(())
 }
 
-fn gate_check_with_ratio(oracle: &Account<OracleView>, op: u8) -> Result<u64> {
-    let (score, ratio) = get_score(oracle);
+fn gate_check_with_ratio(oracle: &UncheckedAccount, op: u8) -> Result<u64> {
+    let (score, ratio) = get_score(oracle)?;
     let allowed = if score >= 80 { true }
         else if score >= 60 { op == 2 || op == 3 }
         else { op == 3 };
@@ -301,6 +323,9 @@ pub struct VaultAccount {
 }
 impl VaultAccount { pub const LEN: usize = 8 + 32 + 32 + 8 + 8 + 8 + 8 + 8 + 1; }
 
+// OracleView definition kept for documentation purposes only — we now parse
+// the oracle account manually inside get_score() to avoid Anchor's automatic
+// owner check.
 #[account]
 pub struct OracleView {
     pub authority:    Pubkey,
@@ -333,7 +358,7 @@ pub struct Initialize<'info> {
     )]
     pub flux_mint: Account<'info, Mint>,
 
-    /// CHECK: oracle account validated by owner + seeds in downstream calls
+    /// CHECK: oracle account validated manually in downstream calls
     pub oracle_state: UncheckedAccount<'info>,
 
     #[account(mut)]
@@ -376,11 +401,8 @@ pub struct Deposit<'info> {
     #[account(mut, seeds = [b"config"], bump = config.bump)]
     pub config: Account<'info, ProgramConfig>,
 
-    #[account(
-        seeds = [b"oracle_v1"], bump = oracle_state.bump,
-        owner = RISK_ORACLE_ID @ VaultError::InvalidOracle
-    )]
-    pub oracle_state: Account<'info, OracleView>,
+    /// CHECK: validated manually inside get_score() — must be owned by RISK_ORACLE_ID
+    pub oracle_state: UncheckedAccount<'info>,
 
     #[account(mut)]
     pub owner_ata: Account<'info, TokenAccount>,
@@ -417,11 +439,8 @@ pub struct MintFlux<'info> {
     #[account(mut, seeds = [b"flux_mint"], bump = config.flux_mint_bump)]
     pub flux_mint: Account<'info, Mint>,
 
-    #[account(
-        seeds = [b"oracle_v1"], bump = oracle_state.bump,
-        owner = RISK_ORACLE_ID @ VaultError::InvalidOracle
-    )]
-    pub oracle_state: Account<'info, OracleView>,
+    /// CHECK: validated manually inside get_score() — must be owned by RISK_ORACLE_ID
+    pub oracle_state: UncheckedAccount<'info>,
 
     #[account(
         init_if_needed, payer = owner,
@@ -474,11 +493,8 @@ pub struct Withdraw<'info> {
     #[account(mut, seeds = [b"config"], bump = config.bump)]
     pub config: Account<'info, ProgramConfig>,
 
-    #[account(
-        seeds = [b"oracle_v1"], bump = oracle_state.bump,
-        owner = RISK_ORACLE_ID @ VaultError::InvalidOracle
-    )]
-    pub oracle_state: Account<'info, OracleView>,
+    /// CHECK: validated manually inside get_score() — must be owned by RISK_ORACLE_ID
+    pub oracle_state: UncheckedAccount<'info>,
 
     #[account(mut)]
     pub escrow: Account<'info, TokenAccount>,

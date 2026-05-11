@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
 
-declare_id!("8dCZCMLL4ZywhTtMKN9JXpYEgueW1fGMYvTdeDAuvywU");
+declare_id!("9tQPx6NLzy81Lk3AQwA8EbnnCSPbrGezCmc58EkvDG8r");
 
-pub const RISK_ORACLE_ID: Pubkey = pubkey!("Ge5cnpRct8bS7SAcJr3gN71wKCZHMcPxWa818myKt4vg");
+pub const RISK_ORACLE_ID: Pubkey = pubkey!("u6LFtFvriSjCibNRsFBJgPi61m4LkDPLXM3HYndFMJX");
 pub const THRESHOLD_OPEN: u8 = 80;
 pub const THRESHOLD_RESTRICTED: u8 = 60;
 pub const MAX_SCORE_AGE: i64 = 300;
